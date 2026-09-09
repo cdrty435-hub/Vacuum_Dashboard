@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>진공도 판정 대시보드 — 다이캐스팅 진공설비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --panel:#E4E6E1;
+  --paper:#F6F7F4;
+  --card:#FFFFFF;
+  --ink:#21262B;
+  --ink-2:#5A6169;
+  --ink-3:#8A9198;
+  --rule:#C6CAC3;
+  --rule-2:#DDE0DA;
+  --led:#D8231B;
+  --vac:#1F4E5F;
+  --g-sang:#1B6F52;
+  --g-jung:#B07D05;
+  --g-ha:#CC5F26;
+  --g-bad:#B72218;
+  --shadow:0 1px 0 rgba(33,38,43,.06), 0 2px 10px rgba(33,38,43,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--panel);
+  color:var(--ink);
+  font-family:'IBM Plex Sans KR',system-ui,sans-serif;
+  font-weight:400;
+  line-height:1.65;
+  padding:20px 16px 64px;
+}
+.wrap{max-width:1180px;margin:0 auto}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- masthead ---------- */
+.masthead{
+  border-top:3px solid var(--ink);
+  padding-top:14px;
+  margin-bottom:26px;
+  display:flex;flex-wrap:wrap;gap:16px;
+  align-items:flex-end;justify-content:space-between;
+}
+.masthead h1{
+  font-size:clamp(1.5rem,3.4vw,2.1rem);
+  font-weight:600;letter-spacing:-.02em;line-height:1.2;
+}
+.masthead p{color:var(--ink-2);font-size:.9rem;margin-top:4px;max-width:60ch}
+.stamp{
+  font-size:.76rem;color:var(--ink-2);text-align:right;line-height:1.5;
+  border-left:2px solid var(--rule);padding-left:12px;
+}
+
+/* ---------- generic block ---------- */
+.block{
+  background:var(--card);
+  border:1px solid var(--rule-2);
+  border-radius:3px;
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+}
+.block > h2{
+  font-size:1.02rem;font-weight:600;letter-spacing:-.01em;
+  padding:14px 20px;border-bottom:1px solid var(--rule-2);
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+}
+.block > h2 small{font-weight:400;font-size:.8rem;color:var(--ink-3);letter-spacing:0}
+.pad{padding:20px}
+
+/* ---------- hero: column + readout ---------- */
+.hero{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:0}
+@media(max-width:880px){.hero{grid-template-columns:1fr}}
+.col-side{border-right:1px solid var(--rule-2);padding:22px 20px}
+@media(max-width:880px){.col-side{border-right:0;border-bottom:1px solid var(--rule-2)}}
+.read-side{padding:22px 20px}
+
+/* the vacuum column */
+.gauge{display:grid;grid-template-columns:52px 1fr 62px;gap:8px;height:430px;margin-top:6px}
+.tickcol{position:relative;font-size:.68rem;color:var(--ink-3)}
+.tickcol span{position:absolute;right:0;transform:translateY(-50%);white-space:nowrap}
+.tickcol.right span{right:auto;left:0}
+.tube{
+  position:relative;border:1px solid var(--rule);border-radius:2px;
+  background:linear-gradient(#F2F3F0,#FBFCFA);overflow:hidden;
+}
+.band{position:absolute;left:0;right:0}
+.band i{
+  position:absolute;left:6px;bottom:3px;font-style:normal;
+  font-size:.66rem;letter-spacing:.02em;opacity:.9;
+}
+.fill{
+  position:absolute;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(-45deg,rgba(31,78,95,.20) 0 5px,rgba(31,78,95,.10) 5px 10px);
+  border-top:2px solid var(--vac);
+  transition:height .35s cubic-bezier(.4,0,.2,1);
+}
+.needle{
+  position:absolute;left:-4px;right:-4px;height:0;
+  border-top:2px dashed var(--led);
+  transition:bottom .35s cubic-bezier(.4,0,.2,1);
+  z-index:3;
+}
+.needle b{
+  position:absolute;right:2px;top:-19px;
+  background:var(--led);color:#fff;font-weight:500;
+  font-size:.68rem;padding:1px 6px;border-radius:2px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.gl{display:flex;justify-content:space-between;font-size:.7rem;color:var(--ink-3);margin-top:8px}
+
+/* LED readout */
+.led-box{
+  background:#241F1F;border-radius:4px;padding:14px 18px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  border:1px solid #100D0D;
+}
+.led-box .v{
+  font-family:'IBM Plex Mono',monospace;font-weight:600;
+  font-size:clamp(2rem,6vw,2.9rem);color:var(--led);
+  letter-spacing:.02em;line-height:1;
+  text-shadow:0 0 14px rgba(216,35,27,.45);
+}
+.led-box .u{color:#C4A5A3;font-size:.85rem;font-weight:500}
+
+/* input row */
+.inrow{display:flex;gap:8px;margin:16px 0 6px}
+.inrow input{
+  flex:1;min-width:0;
+  font-family:'IBM Plex Mono',monospace;font-size:1.35rem;font-weight:500;
+  padding:9px 12px;border:1px solid var(--rule);border-radius:3px;
+  background:var(--paper);color:var(--ink);
+}
+.inrow select{
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:.9rem;
+  padding:9px 10px;border:1px solid var(--rule);border-radius:3px;
+  background:var(--paper);color:var(--ink);
+}
+.inrow input:focus,.inrow select:focus,button:focus-visible{
+  outline:2px solid var(--vac);outline-offset:1px;
+}
+.hint{font-size:.76rem;color:var(--ink-3);margin-bottom:14px}
+
+/* preset chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.chip{
+  font-family:inherit;font-size:.78rem;
+  padding:5px 11px;border:1px solid var(--rule);border-radius:20px;
+  background:var(--paper);color:var(--ink-2);cursor:pointer;
+}
+.chip:hover{border-color:var(--vac);color:var(--vac)}
+.chip.on{background:var(--vac);border-color:var(--vac);color:#fff}
+
+/* verdict */
+.verdict{
+  display:flex;align-items:center;gap:14px;
+  padding:13px 16px;border-radius:3px;margin:16px 0;
+  border-left:5px solid var(--g-jung);background:var(--paper);
+}
+.verdict .mark{
+  font-size:1.7rem;font-weight:700;line-height:1;min-width:1.6em;text-align:center;
+}
+.verdict .txt strong{display:block;font-size:.95rem;font-weight:600}
+.verdict .txt span{font-size:.8rem;color:var(--ink-2)}
+
+/* derived grid */
+.derv{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--rule-2);border:1px solid var(--rule-2);border-radius:3px}
+.derv div{background:var(--card);padding:11px 14px}
+.derv dt{font-size:.74rem;color:var(--ink-3);margin-bottom:2px}
+.derv dd{font-family:'IBM Plex Mono',monospace;font-size:1.18rem;font-weight:500}
+.derv dd em{font-style:normal;font-size:.78rem;color:var(--ink-3);font-family:'IBM Plex Sans KR',sans-serif;margin-left:3px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--rule-2)}
+th{font-weight:600;font-size:.76rem;color:var(--ink-2);background:var(--paper);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+.scroll{overflow-x:auto}
+tr.hi td{background:#FFF6F5}
+.tag{
+  display:inline-block;font-size:.72rem;font-weight:600;
+  padding:1px 8px;border-radius:2px;color:#fff;white-space:nowrap;
+}
+.t-sang{background:var(--g-sang)}.t-jung{background:var(--g-jung)}
+.t-ha{background:var(--g-ha)}.t-bad{background:var(--g-bad)}
+
+/* equipment cards */
+.eq{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--rule-2)}
+.eq article{background:var(--card);padding:18px 20px}
+.eq h3{font-size:.95rem;font-weight:600;margin-bottom:2px}
+.eq .sub{font-size:.74rem;color:var(--ink-3);margin-bottom:12px}
+.eq .big{font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;line-height:1.1}
+.eq .big em{font-style:normal;font-size:.8rem;color:var(--ink-3);font-family:'IBM Plex Sans KR',sans-serif;margin-left:4px}
+.eq ul{list-style:none;margin-top:12px;font-size:.82rem}
+.eq li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dotted var(--rule-2)}
+.eq li:last-child{border-bottom:0}
+.eq li span:last-child{font-family:'IBM Plex Mono',monospace;font-weight:500}
+.bar{height:7px;background:var(--rule-2);border-radius:4px;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px}
+
+/* two-col */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:880px){.two{grid-template-columns:1fr}}
+
+/* note / explainer */
+.note{background:var(--paper);border-left:3px solid var(--vac);padding:12px 16px;font-size:.85rem;border-radius:0 3px 3px 0}
+.note + .note{margin-top:10px}
+.defs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.defs section{border-top:2px solid var(--ink);padding-top:10px}
+.defs h4{font-size:.9rem;font-weight:600;margin-bottom:5px}
+.defs p{font-size:.83rem;color:var(--ink-2)}
+.defs .f{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--vac);margin-top:8px;display:block;word-break:break-all}
+
+/* leak calc */
+.leak-in{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.leak-in label{font-size:.78rem;color:var(--ink-2);display:block;margin-bottom:3px}
+.leak-in input{
+  font-family:'IBM Plex Mono',monospace;font-size:1.05rem;width:110px;
+  padding:7px 10px;border:1px solid var(--rule);border-radius:3px;background:var(--paper);color:var(--ink);
+}
+.res{padding:11px 14px;border-radius:3px;background:var(--paper);border-left:4px solid var(--rule);font-size:.86rem}
+.res b{display:block;font-size:.95rem;margin-bottom:2px}
+
+footer{font-size:.76rem;color:var(--ink-3);text-align:center;margin-top:28px;line-height:1.7}
+
+@media print{
+  body{background:#fff;padding:0}
+  .block{break-inside:avoid;box-shadow:none}
+  .chips,.needle b{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div>
+    <h1>진공도 판정 대시보드</h1>
+    <p>게이지 표시값을 절대압(잔류압)으로 환산하고 상·중·하를 판정합니다. 다이캐스팅 기공을 결정하는 것은 뽑아낸 공기가 아니라 캐비티에 남은 공기입니다.</p>
+  </div>
+  <div class="stamp">
+    대상 설비 · TMS KOREA / DK(디엠케이)<br>
+    기준 대기압 <span class="mono" id="stampAtm">1013</span> mbar<br>
+    작성 <span class="mono">2026-09-09</span> 공무팀
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<div class="block">
+  <h2>환산 계산기 <small>표시값을 넣으면 나머지 단위와 판정이 함께 나옵니다</small></h2>
+  <div class="hero">
+
+    <!-- column -->
+    <div class="col-side">
+      <div class="gauge">
+        <div class="tickcol" id="tickL"></div>
+        <div class="tube" id="tube">
+          <div class="fill" id="fill"></div>
+          <div class="needle" id="needle"><b id="needleLbl">—</b></div>
+        </div>
+        <div class="tickcol right" id="tickR"></div>
+      </div>
+      <div class="gl">
+        <span>왼쪽 · 절대압 mbar</span>
+        <span>오른쪽 · mmHg 진공도</span>
+      </div>
+      <div class="note" style="margin-top:14px">
+        기둥의 높이가 <strong>캐비티에 남은 공기</strong>입니다. 맨 위가 대기압(공기 100%), 맨 아래가 완전진공(공기 0%)입니다.
+      </div>
+    </div>
+
+    <!-- readout -->
+    <div class="read-side">
+      <div class="chips" id="chips"></div>
+
+      <div class="inrow">
+        <input type="number" id="val" step="0.1" value="-72.6" aria-label="게이지 표시값">
+        <select id="unit" aria-label="단위">
+          <option value="kpag">kPaG (게이지압)</option>
+          <option value="mmhg">mmHg (진공도)</option>
+          <option value="mbar">mbar (절대압)</option>
+          <option value="pct">% (잔류공기)</option>
+        </select>
+      </div>
+      <p class="hint">kPaG는 음수로, mmHg 진공도는 양수로 입력하세요. 대기압은 아래 기준표에서 바꿀 수 있습니다.</p>
+
+      <div class="led-box">
+        <span class="v" id="ledVal">287</span>
+        <span class="u">mbar<br>절대압(잔류압)</span>
+      </div>
+
+      <div class="verdict" id="verdict">
+        <span class="mark" id="vMark">하</span>
+        <span class="txt"><strong id="vTitle">—</strong><span id="vDesc">—</span></span>
+      </div>
+
+      <dl class="derv">
+        <div><dt>진공도 (mmHg)</dt><dd><span id="oMmhg">—</span></dd></div>
+        <div><dt>게이지압 (kPaG)</dt><dd><span id="oKpag">—</span></dd></div>
+        <div><dt>캐비티 잔류공기</dt><dd><span id="oPct">—</span><em>%</em></dd></div>
+        <div><dt>펌프 규격 대비 손실</dt><dd><span id="oRatio">—</span><em>배</em></dd></div>
+      </dl>
+
+      <div class="note" style="margin-top:16px">
+        <strong>캐비티 잔류 공기량</strong> —
+        캐비티 용적 <input type="number" id="cav" value="100" step="10" style="width:78px;font-family:'IBM Plex Mono',monospace;padding:3px 6px;border:1px solid var(--rule);border-radius:3px;background:#fff"> cc 기준,
+        용탕이 들어오기 직전 <strong class="mono" id="cavRes">28.3</strong> cc의 공기가 금형 안에 남아 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 설비 현황 ============ -->
+<div class="block">
+  <h2>현재 설비 현황 <small>동일 사양 · 동일 펌프 기준 비교</small></h2>
+  <div class="eq" id="eqCards"></div>
+</div>
+
+<!-- ============ 판정 기준 + 개념 ============ -->
+<div class="two">
+
+  <div class="block">
+    <h2>절대압 판정 기준 <small>현업 통용 등급</small></h2>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>등급</th><th class="n">절대압 mbar</th><th class="n">mmHg</th><th class="n">kPaG</th><th>적용</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tag t-sang">상</span></td>
+            <td class="n">50 이하</td><td class="n">723 ↑</td><td class="n">−96.3 ↓</td>
+            <td>열처리·용접 부품, 구조 부품</td>
+          </tr>
+          <tr>
+            <td><span class="tag t-jung">중</span></td>
+            <td class="n">50 ~ 100</td><td class="n">685 ~ 723</td><td class="n">−91.3 ~ −96.3</td>
+            <td>일반 진공 다이캐스팅, 기밀 부품</td>
+          </tr>
+          <tr>
+            <td><span class="tag t-ha">하</span></td>
+            <td class="n">100 ~ 200</td><td class="n">610 ~ 685</td><td class="n">−81.3 ~ −91.3</td>
+            <td>외관·비기밀 부품에 한정</td>
+          </tr>
+          <tr>
+            <td><span class="tag t-bad">부적합</span></td>
+            <td class="n">200 초과</td><td class="n">610 ↓</td><td class="n">−81.3 ↑</td>
+            <td>진공 효과 기대 어려움</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pad" style="padding-top:14px">
+      <div class="note">
+        기준 대기압
+        <input type="number" id="atm" value="1013" step="1" style="width:78px;font-family:'IBM Plex Mono',monospace;padding:3px 6px;border:1px solid var(--rule);border-radius:3px;background:#fff"> mbar —
+        날씨에 따라 990~1025 사이에서 변합니다. 40~50 mbar대를 관리할 때는 당일 기압을 넣으세요.
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h2>세 가지 값의 차이</h2>
+    <div class="pad">
+      <div class="defs">
+        <section>
+          <h4>mmHg — 얼마나 뽑았나</h4>
+          <p>대기압을 0으로 놓고 뽑아낸 양을 셉니다. 클수록 좋습니다.</p>
+          <span class="f">(760 − 표시값) × 1.333 = 절대압 mbar</span>
+        </section>
+        <section>
+          <h4>kPaG — 얼마나 내렸나</h4>
+          <p>대기압을 0으로 놓고 낮아진 정도를 셉니다. 마이너스가 클수록 좋습니다.</p>
+          <span class="f">(101.3 − |표시값|) × 10 = 절대압 mbar</span>
+        </section>
+        <section>
+          <h4>절대압 mbar — 얼마나 남았나</h4>
+          <p>완전진공을 0으로 놓고 남은 공기를 셉니다. 작을수록 좋고, 기공과 직결됩니다.</p>
+          <span class="f">기준점이 고정 → 날씨·설비 달라도 비교 가능</span>
+        </section>
+      </div>
+      <div class="note" style="margin-top:18px">
+        mmHg와 kPaG는 <strong>같은 것을 반대 방향으로 센 값</strong>입니다(1 kPa = 7.5 mmHg). 절대압만 기준점이 다릅니다.
+      </div>
+      <div class="note">
+        게이지압은 끝으로 갈수록 눈금이 무뎌집니다. −85에서 −95로 가는 <strong>10 kPa</strong>가 잔류 공기를 <strong>16%에서 6%로</strong> 떨어뜨립니다. 게이지압 차이만 보면 실제 의미를 놓칩니다.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 환산표 ============ -->
+<div class="block">
+  <h2>환산표 <small>현장 게시용 · 인쇄 가능</small></h2>
+  <div class="scroll">
+    <table id="convTbl">
+      <thead><tr>
+        <th class="n">mmHg</th><th class="n">kPaG</th><th class="n">절대압 mbar</th>
+        <th class="n">잔류공기</th><th>등급</th><th>비고</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============ 누설률 ============ -->
+<div class="block">
+  <h2>누설률 판정 <small>진공 도달 후 펌프를 세우고 압력이 얼마나 오르는지</small></h2>
+  <div class="pad">
+    <div class="leak-in">
+      <div><label for="lk1">정지 직후 mmHg</label><input type="number" id="lk1" value="634" step="1"></div>
+      <div><label for="lk2">60초 후 mmHg</label><input type="number" id="lk2" value="610" step="1"></div>
+      <div><label for="lkT">경과 시간(초)</label><input type="number" id="lkT" value="60" step="10"></div>
+    </div>
+    <div class="res" id="lkRes"><b>—</b><span>—</span></div>
+    <div class="note" style="margin-top:14px">
+      펌프 단독 도달진공(blank-off)이 <strong>740 mmHg 이상</strong>이면 펌프는 정상입니다. 그때 값이 낮으면 원인은 배관·밸브·금형 실링 누설 쪽입니다.
+    </div>
+  </div>
+</div>
+
+<footer>
+  환산 기준 1 atm = 760 mmHg = 1013.25 mbar = 101.325 kPa · 1 kPa = 7.5 mmHg<br>
+  표시값은 게이지 설치 지점의 압력이며, 금형 캐비티 실제 잔류압은 이보다 얕을 수 있습니다.
+</footer>
+
+</div>
+
+<script>
+(function(){
+  const MMHG_TO_MBAR = 1.33322;
+  const $ = id => document.getElementById(id);
+
+  const PRESETS = [
+    {k:'TMS 설비',      u:'kpag', v:-72.6},
+    {k:'DK 설비',       u:'kpag', v:-84.6},
+    {k:'대기산업 제시', u:'mmhg', v:730},
+    {k:'Becker 펌프규격',u:'mmhg', v:759.62},
+    {k:'진공 미사용',   u:'mmhg', v:0}
+  ];
+
+  const GRADES = [
+    {max:50,   mark:'상', tag:'t-sang', color:'var(--g-sang)', title:'상 — 고진공',
+     desc:'열처리·용접·구조 부품까지 대응 가능한 수준'},
+    {max:100,  mark:'중', tag:'t-jung', color:'var(--g-jung)', title:'중 — 표준 진공',
+     desc:'일반 진공 다이캐스팅 요구 성능을 만족'},
+    {max:200,  mark:'하', tag:'t-ha',   color:'var(--g-ha)',   title:'하 — 저진공',
+     desc:'외관·비기밀 부품에 한정. 점검 대상'},
+    {max:1e9,  mark:'✕', tag:'t-bad',  color:'var(--g-bad)',  title:'부적합 — 진공 효과 미달',
+     desc:'진공을 걸어도 공기가 대부분 남습니다. 즉시 조치'}
+  ];
+
+  const atmEl = $('atm');
+  const atm = () => Math.max(800, Math.min(1100, +atmEl.value || 1013));
+
+  function toAbs(v, unit){
+    const A = atm();
+    if(unit === 'mbar') return v;
+    if(unit === 'pct')  return A * v / 100;
+    if(unit === 'mmhg') return A - v * MMHG_TO_MBAR;
+    return A - Math.abs(v) * 10;              // kpag
+  }
+  function grade(abs){ return GRADES.find(g => abs <= g.max); }
+  const f = (n,d=1) => n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+  /* ---- column scale ---- */
+  function buildScale(){
+    const A = atm();
+    const L = $('tickL'), R = $('tickR'), tube = $('tube');
+    L.innerHTML = ''; R.innerHTML = '';
+    tube.querySelectorAll('.band').forEach(b => b.remove());
+
+    [0,100,200,400,600,800,1000].filter(v => v <= A).forEach(v => {
+      const s = document.createElement('span');
+      s.textContent = v; s.style.bottom = (v / A * 100) + '%';
+      L.appendChild(s);
+    });
+    [0,200,400,600,700,760].forEach(v => {
+      const abs = A - v * MMHG_TO_MBAR; if(abs < 0) return;
+      const s = document.createElement('span');
+      s.textContent = v; s.style.bottom = (abs / A * 100) + '%';
+      R.appendChild(s);
+    });
+
+    const bands = [[0,50,'var(--g-sang)','상'],[50,100,'var(--g-jung)','중'],
+                   [100,200,'var(--g-ha)','하'],[200,A,'var(--g-bad)','부적합']];
+    bands.forEach(([lo,hi,c,lbl]) => {
+      const d = document.createElement('div');
+      d.className = 'band';
+      d.style.bottom = (lo / A * 100) + '%';
+      d.style.height = ((hi - lo) / A * 100) + '%';
+      d.style.background = c;
+      d.style.opacity = '.13';
+      d.style.borderTop = '1px solid ' + c;
+      const i = document.createElement('i');
+      i.textContent = lbl; i.style.color = c; i.style.opacity = '.85';
+      d.appendChild(i);
+      $('tube').insertBefore(d, $('fill'));
+    });
+  }
+
+  /* ---- equipment cards ---- */
+  function buildEq(){
+    const A = atm();
+    const eq = [
+      {n:'TMS KOREA 설비', s:'현재 문제 제기 · 펌프 교체 검토 중', v:-72.6, u:'kpag'},
+      {n:'DK(디엠케이) 설비', s:'비교 대상 · Becker U 4.70 F/K', v:-84.6, u:'kpag'},
+      {n:'대기산업 제시값', s:'참고 · 타사 비교 자료', v:730, u:'mmhg'},
+      {n:'Becker 펌프 규격', s:'참고 · 카탈로그 도달압력', v:759.62, u:'mmhg'}
+    ];
+    $('eqCards').innerHTML = eq.map(e => {
+      const abs = toAbs(e.v, e.u), g = grade(abs);
+      const pct = abs / A * 100;
+      const mmhg = (A - abs) / MMHG_TO_MBAR;
+      const kpag = -(A - abs) / 10;
+      const loss = abs / 0.5;
+      return `<article>
+        <h3>${e.n}</h3>
+        <div class="sub">${e.s}</div>
+        <div class="big" style="color:${g.color}">${f(abs,0)}<em>mbar 절대압</em></div>
+        <div class="bar"><i style="width:${Math.min(100,pct).toFixed(1)}%;background:${g.color}"></i></div>
+        <ul>
+          <li><span>등급</span><span class="tag ${g.tag}">${g.mark}</span></li>
+          <li><span>캐비티 잔류공기</span><span>${f(pct)} %</span></li>
+          <li><span>진공도</span><span>${f(mmhg)} mmHg</span></li>
+          <li><span>게이지압</span><span>${f(kpag)} kPaG</span></li>
+          <li><span>펌프규격 대비</span><span>${loss < 2 ? '기준' : f(loss,0) + '배 손실'}</span></li>
+        </ul>
+      </article>`;
+    }).join('');
+  }
+
+  /* ---- conversion table ---- */
+  function buildTable(){
+    const A = atm();
+    const rows = [
+      [750,'최종 목표'],[730,'대기산업 제시'],[723,'상 하한'],[700,''],[685,'중 하한'],
+      [660,''],[634.5,'DK 설비'],[610,'하 하한'],[580,''],[544.5,'TMS 설비'],[500,'']
+    ];
+    $('convTbl').querySelector('tbody').innerHTML = rows.map(([mm,note]) => {
+      const abs = A - mm * MMHG_TO_MBAR, g = grade(abs);
+      const hi = note.includes('설비') ? ' class="hi"' : '';
+      return `<tr${hi}>
+        <td class="n">${f(mm)}</td>
+        <td class="n">${f(-mm * MMHG_TO_MBAR / 10)}</td>
+        <td class="n">${f(abs,0)}</td>
+        <td class="n">${f(abs / A * 100)} %</td>
+        <td><span class="tag ${g.tag}">${g.mark}</span></td>
+        <td>${note}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* ---- main render ---- */
+  function render(){
+    const A = atm();
+    const v = +$('val').value || 0, u = $('unit').value;
+    let abs = toAbs(v, u);
+    abs = Math.max(0, Math.min(A, abs));
+
+    const g    = grade(abs);
+    const pct  = abs / A * 100;
+    const mmhg = (A - abs) / MMHG_TO_MBAR;
+    const kpag = -(A - abs) / 10;
+
+    $('ledVal').textContent = f(abs, abs < 10 ? 2 : 0);
+    $('oMmhg').textContent  = f(mmhg);
+    $('oKpag').textContent  = f(kpag);
+    $('oPct').textContent   = f(pct);
+    $('oRatio').textContent = abs / 0.5 < 2 ? '—' : f(abs / 0.5, 0);
+
+    const vd = $('verdict');
+    vd.style.borderLeftColor = g.color;
+    $('vMark').textContent = g.mark;
+    $('vMark').style.color = g.color;
+    $('vTitle').textContent = g.title;
+    $('vDesc').textContent  = g.desc;
+
+    const h = pct;
+    $('fill').style.height   = h + '%';
+    $('needle').style.bottom = h + '%';
+    $('needleLbl').textContent = f(abs,0) + ' mbar';
+
+    $('cavRes').textContent = f((+$('cav').value || 0) * pct / 100);
+    $('stampAtm').textContent = A;
+
+    document.querySelectorAll('.chip').forEach((c,i) => {
+      const p = PRESETS[i];
+      c.classList.toggle('on', p && p.u === u && Math.abs(p.v - v) < 0.05);
+    });
+  }
+
+  function leak(){
+    const a = +$('lk1').value, b = +$('lk2').value, t = Math.max(1, +$('lkT').value);
+    const rate = (a - b) / (t / 60);
+    const box = $('lkRes');
+    let title, desc, color;
+    if(isNaN(rate)){ title='값을 입력하세요'; desc='정지 직후와 60초 후 표시값이 필요합니다.'; color='var(--rule)'; }
+    else if(rate < 0){ title='압력이 오히려 내려갔습니다'; desc='측정 순서나 밸브 차단 상태를 확인하세요.'; color='var(--g-jung)'; }
+    else if(rate <= 5){ title=f(rate)+' mmHg/min — 양호'; desc='누설이 관리 범위 안입니다. 도달진공이 낮다면 펌프나 필터를 보세요.'; color='var(--g-sang)'; }
+    else if(rate <= 20){ title=f(rate)+' mmHg/min — 관리 필요'; desc='경미한 누설이 있습니다. 피팅·호스·체크밸브를 점검하세요.'; color='var(--g-jung)'; }
+    else { title=f(rate)+' mmHg/min — 누설 확정'; desc='도달진공 부족의 주원인이 누설입니다. 펌프 교체로는 해결되지 않습니다.'; color='var(--g-bad)'; }
+    box.style.borderLeftColor = color;
+    box.innerHTML = '<b style="color:'+color+'">'+title+'</b><span>'+desc+'</span>';
+  }
+
+  /* ---- init ---- */
+  $('chips').innerHTML = PRESETS.map(p => `<button class="chip">${p.k}</button>`).join('');
+  document.querySelectorAll('.chip').forEach((c,i) => c.addEventListener('click', () => {
+    $('val').value = PRESETS[i].v; $('unit').value = PRESETS[i].u; render();
+  }));
+
+  ['val','unit','cav'].forEach(id => $(id).addEventListener('input', render));
+  atmEl.addEventListener('input', () => { buildScale(); buildEq(); buildTable(); render(); });
+  ['lk1','lk2','lkT'].forEach(id => $(id).addEventListener('input', leak));
+
+  buildScale(); buildEq(); buildTable(); render(); leak();
+})();
+</script>
+</body>
+</html>
