@@ -83,22 +83,23 @@ body{
 @media(max-width:1150px){.ref-side{grid-column:1/-1;border-right:0;border-bottom:1px solid var(--rule-2);padding-right:18px}}
 @media(max-width:880px){.ref-side{padding:18px}}
 .ref-cap{font-size:.79rem;color:var(--ink-3);margin-bottom:8px;padding-right:18px}
-.ref-wrap{max-height:392px;overflow-y:auto;padding-right:14px;border-top:1px solid var(--rule-2)}
-#refTbl{font-size:.79rem}
-#refTbl th{padding:6px 6px;font-size:.68rem;position:sticky;top:0;background:var(--paper);z-index:2}
-#refTbl td{padding:5px 6px;white-space:nowrap;cursor:pointer}
+.ref-wrap{padding-right:14px;border-top:1px solid var(--rule-2)}
+#refTbl{font-size:.75rem}
+#refTbl th{padding:4px 5px;font-size:.65rem;background:var(--paper)}
+#refTbl td{padding:2.5px 5px;white-space:nowrap;cursor:pointer;line-height:1.3}
 #refTbl tbody tr:hover td{background:#EEF3F1}
 #refTbl tr.eq td{background:#FBF7F5;font-weight:500}
 #refTbl tr.eq:hover td{background:#F4EDEA}
 #refTbl tr.cur td{background:var(--vac)!important;color:#fff}
 #refTbl tr.cur .tag{box-shadow:0 0 0 1px rgba(255,255,255,.5)}
-#refTbl td.eqn{font-size:.7rem;color:var(--ink-3)}
+#refTbl .tag{font-size:.66rem;padding:0 6px}
+#refTbl td.eqn{font-size:.68rem;color:var(--ink-3)}
 #refTbl tr.cur td.eqn{color:#D7E1E4}
 .ref-hint{font-size:.72rem;color:var(--ink-3);margin-top:8px;padding-right:18px}
 .read-side{padding:22px 20px}
 
 /* the vacuum column */
-.gauge{display:grid;grid-template-columns:44px 1fr 52px;gap:6px;height:392px;margin-top:6px}
+.gauge{display:grid;grid-template-columns:44px 1fr 52px;gap:6px;height:452px;margin-top:6px}
 .tickcol{position:relative;font-size:.68rem;color:var(--ink-3)}
 .tickcol span{position:absolute;right:0;transform:translateY(-50%);white-space:nowrap}
 .tickcol.right span{right:auto;left:0}
@@ -307,8 +308,9 @@ footer{font-size:.76rem;color:var(--ink-3);text-align:center;margin-top:28px;lin
   </div>
   <div class="pad" style="padding-top:14px">
     <div class="note warn">
-      <strong>VC5·VC6는 HMI의 탱크압력과 흡입압력차이값을 함께 넣었습니다.</strong>
-      탱크에서 금형까지 오는 사이 VC5는 31.6 mmHg, VC6는 41.1 mmHg를 잃습니다. 기공을 결정하는 것은 아래쪽(흡입) 값입니다.
+      <strong>VC6 호스 교체 효과 확인 (2026-09).</strong>
+      탱크 701.1 → 719.5 mmHg, 배관 손실 41.1 → 23.3 mmHg로 개선되어 금형측이 133 → 85 mbar, 등급 <b>하 → 중</b>이 되었습니다.
+      기공을 결정하는 것은 아래쪽(흡입) 값입니다.
     </div>
     <div class="note">
       TMS 설비(VC1·VC4) 게이지가 탱크 쪽에 있다면 금형 실제값은 표보다 더 낮습니다. 게이지 설치 위치 확인이 필요합니다.
@@ -323,7 +325,7 @@ footer{font-size:.76rem;color:var(--ink-3);text-align:center;margin-top:28px;lin
 
     <!-- reference table -->
     <div class="ref-side">
-      <div class="ref-cap">기준표 — 행을 누르면 그 값으로 계산됩니다</div>
+      <div class="ref-cap">기준표 759.6 → 500 mmHg — 행을 누르면 그 값으로 계산됩니다</div>
       <div class="ref-wrap">
         <table id="refTbl">
           <thead><tr>
@@ -498,33 +500,33 @@ footer{font-size:.76rem;color:var(--ink-3);text-align:center;margin-top:28px;lin
   const $ = id => document.getElementById(id);
 
   const PRESETS = [
-    {k:'VC1 (TMS)', u:'kpag', v:-84.6},
+    {k:'VC1 (TMS)', u:'kpag', v:-84.3},
     {k:'VC4 (TMS)', u:'kpag', v:-72.6},
     {k:'VC5 탱크',  u:'mmhg', v:754.8},
     {k:'VC5 흡입',  u:'mmhg', v:723.2},
-    {k:'VC6 탱크',  u:'mmhg', v:701.1},
-    {k:'VC6 흡입',  u:'mmhg', v:660.0},
+    {k:'VC6 탱크',  u:'mmhg', v:719.5},
+    {k:'VC6 흡입',  u:'mmhg', v:696.2},
     {k:'펌프 규격', u:'mmhg', v:759.62}
   ];
 
   /* 설비 데이터 — 표시값은 화면에서 수정 가능 */
   const EQ = [
-    {no:'VC1', mk:'TMS', dc:'DC 23', pt:'게이지', v:-84.6, u:'kpag',
-     rem:'표시값 재확인 필요. 게이지 설치 위치 확인 후 확정'},
+    {no:'VC1', mk:'TMS', dc:'DC 23', pt:'게이지', v:-84.3, u:'kpag',
+     rem:'게이지 표시값 재확인 완료 (2026-03)'},
     {no:'VC2', mk:'TMS', dc:'수리대기 (E동)', pt:'—', v:null, u:'kpag',
-     rem:'사용 가능여부 확인 후 수리 또는 신규 구매 의사결정'},
+     rem:'펌프 과열 · 모터 연기 발생. 점검 완료'},
     {no:'VC3', mk:'TMS', dc:'수리대기 (A동)', pt:'—', v:null, u:'kpag',
-     rem:'사용 가능여부 확인 후 수리 또는 신규 구매 의사결정'},
+     rem:'점검 완료 · 전체 시스템 문제'},
     {no:'VC4', mk:'TMS', dc:'DC 10', pt:'게이지', v:-72.6, u:'kpag',
-     rem:'펌프 문제로 진공도 저하 → 펌프 교체 결정. 전체 오버홀 불가(샤프트·부품 수급), 수리비 100~120만원'},
+     rem:'펌프 교체 결정 · 6기 중 진공도 가장 낮음'},
     {no:'VC5', mk:'대기(DK)', dc:'DC 22', pt:'탱크압력', v:754.8, u:'mmhg',
      rem:'HMI 설정 · 진공 HIGH 730 / LOW 650'},
     {no:'VC5', mk:'대기(DK)', dc:'DC 22', pt:'흡입(금형측)', v:723.2, u:'mmhg', sub:true,
      rem:'탱크 대비 31.6 mmHg 손실'},
-    {no:'VC6', mk:'대기(DK)', dc:'DC 21', pt:'탱크압력', v:701.1, u:'mmhg',
-     rem:'HMI 설정 · 진공 HIGH 730 / LOW 600'},
-    {no:'VC6', mk:'대기(DK)', dc:'DC 21', pt:'흡입(금형측)', v:660.0, u:'mmhg', sub:true,
-     rem:'탱크 대비 41.1 mmHg 손실'},
+    {no:'VC6', mk:'대기(DK)', dc:'DC 21', pt:'탱크압력', v:719.5, u:'mmhg',
+     rem:'호스 교체 후 701.1 → 719.5 개선 (2026-09) · HIGH 730 / LOW 600'},
+    {no:'VC6', mk:'대기(DK)', dc:'DC 21', pt:'흡입(금형측)', v:696.2, u:'mmhg', sub:true,
+     rem:'탱크 대비 23.3 mmHg 손실 (교체 전 41.1) · 배관 손실 절반으로 감소'},
     {no:'참고', mk:'Becker', dc:'U 4.70 F/K', pt:'카탈로그 도달압력', v:759.62, u:'mmhg',
      rem:'펌프 자체 성능 한계. 실측과의 차이가 배관 손실'}
   ];
@@ -648,8 +650,8 @@ footer{font-size:.76rem;color:var(--ink-3);text-align:center;margin-top:28px;lin
   /* ---- reference table (inside calculator) ---- */
   const REF = [
     [759.6,'펌프 규격'],[754.8,'VC5 탱크'],[750,''],[740,''],[730,'HMI HIGH'],
-    [723.2,'VC5 흡입'],[710,''],[701.1,'VC6 탱크'],[690,''],[685,'중 하한'],
-    [670,''],[660,'VC6 흡입'],[650,''],[634.5,'VC1'],[620,''],
+    [723.2,'VC5 흡입'],[719.5,'VC6 탱크'],[710,''],[696.2,'VC6 흡입'],[685,'중 하한'],
+    [670,''],[650,''],[632.3,'VC1'],[620,''],
     [610,'하 하한'],[590,''],[570,''],[544.5,'VC4'],[520,''],[500,'']
   ];
 
@@ -687,8 +689,6 @@ footer{font-size:.76rem;color:var(--ink-3);text-align:center;margin-top:28px;lin
     document.querySelectorAll('#refTbl tbody tr').forEach(tr => {
       tr.classList.toggle('cur', gap <= 8 && +tr.dataset.k === best);
     });
-    const cur = document.querySelector('#refTbl tr.cur');
-    if(cur && cur.scrollIntoView) cur.scrollIntoView({ block:'nearest' });
   }
 
   /* ---- main render ---- */
